@@ -1,14 +1,15 @@
 if [ "${clam}" = "" ]; then
     clam=${HOME}/clamav/clamav-devel
+    clamconfig=/data/clamav/conf/clamav.conf
 fi
 
-alias sigtool='$(echo ${clam}/sigtool/sigtool)'
-alias clamscan='$(echo ${clam}/clamscan/clamscan)'
-alias clamd='$(echo ${clam}/clamd/clamd)'
-alias clamdcscan='$(echo ${clam}/clamdscan/clamdscan)'
-alias clamdtop='$(echo ${clam}/clamdtop/clamdtop)'
-alias freshclam='$(echo ${clam}/freshclam/freshclam)'
-alias dbtool='$(echo ${clam}/dbtool/dbtool)'
+alias sigtool='$(echo ${clam}/sigtool/sigtool) --config=${clamconfig}'
+alias clamscan='$(echo ${clam}/clamscan/clamscan) --config=${clamconfig}'
+alias clamd='$(echo ${clam}/clamd/clamd) --config=${clamconfig}'
+alias clamdscan='$(echo ${clam}/clamdscan/clamdscan) --config=${clamconfig}'
+alias clamdtop='$(echo ${clam}/clamdtop/clamdtop) --config=${clamconfig}'
+alias freshclam='$(echo ${clam}/freshclam/freshclam) --config=${clamconfig}'
+alias dbtool='$(echo ${clam}/dbtool/dbtool) --config=${clamconfig}'
 
 function buildclam() {
     (
@@ -18,8 +19,8 @@ function buildclam() {
             gmake clean distclean
         fi
         autoreconf -fi && \
-        CC=clang CFLAGS="-g -O0" ./configure --enable-debug --disable-silent-rules --with-dbdir=/data/clamav/db --disable-clamav && \
-        gmake -j7 && \
+        CC=clang LDFLAGS="-v" CFLAGS="-g -O0" ./configure --enable-debug --disable-silent-rules --with-dbdir=/data/clamav/db --disable-clamav && \
+        LDFLAGS="-v" gmake -j7 && \
         gmake check
     ) 2>&1 | tee /tmp/build.log
 }
