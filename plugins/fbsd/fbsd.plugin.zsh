@@ -2,6 +2,9 @@ if [ "${makejobs}" = "" ]; then
     makejobs=7
 fi
 
+# BE management
+alias beupdate='/src/helpers/beupdate.sh -b $(date +%F_%T) -s'
+
 # Package management
 alias pkgv="pkg version '-vIl<'"
 alias pkgup="sudo portmaster -awD --no-confirm"
