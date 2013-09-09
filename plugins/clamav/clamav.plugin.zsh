@@ -1,6 +1,7 @@
 if [ "${clam}" = "" ]; then
     clam=${HOME}/clamav/clamav-devel
     clamconfig=/data/clamav/conf/clamav.conf
+    clamcc="clang"
 fi
 
 alias sigtool='$(echo ${clam}/sigtool/sigtool) --config=${clamconfig}'
@@ -13,16 +14,22 @@ alias dbtool='$(echo ${clam}/dbtool/dbtool) --config=${clamconfig}'
 alias clamconf='$(echo ${clam}/clamconf/clamconf) --config=${clamconfig}'
 
 function buildclam() {
+    make="gmake"
+
+    if [ $(uname) = "Linux" ]; then
+        make="make"
+    fi
+
     (
         cd $clam
 
         if [ -f config.status ]; then
-            gmake clean distclean
+            ${make} clean distclean
         fi
         autoreconf -fi && \
-        CC=clang LDFLAGS="-v" CFLAGS="-g -O0" ./configure --enable-debug --disable-silent-rules --with-dbdir=/data/clamav/db --disable-clamav --prefix=/data/clamav/install --enable-milter && \
-        gmake -j7 && \
-        gmake check
+        CC=${clamcc} LDFLAGS="-v" CFLAGS="-g -O0" ./configure --enable-debug --disable-silent-rules --with-dbdir=/data/clamav/db --disable-clamav --prefix=/data/clamav/install --enable-milter && \
+        ${make} -j7 && \
+        ${make} check
     ) 2>&1 | tee /tmp/build.log
 }
 
