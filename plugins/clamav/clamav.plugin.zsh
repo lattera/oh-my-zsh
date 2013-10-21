@@ -15,6 +15,8 @@ alias clamconf='$(echo ${clam}/clamconf/clamconf) --config=${clamconfig}'
 
 function buildclam() {
     make="gmake"
+    cflags="-g -O2"
+    ldflags=""
 
     if [ $(uname) = "Linux" ]; then
         make="make"
@@ -27,7 +29,7 @@ function buildclam() {
             ${make} clean distclean
         fi
         autoreconf -fi && \
-        CC=${clamcc} LDFLAGS="-v" CFLAGS="-g -O0" ./configure --enable-debug --disable-silent-rules --with-dbdir=/data/clamav/db --disable-clamav --prefix=/data/clamav/install --enable-milter && \
+        CC=${clamcc} LDFLAGS=${ldflags} CFLAGS=${cflags} ./configure --disable-silent-rules --with-dbdir=/data/clamav/db --disable-clamav --prefix=/data/clamav/install --enable-milter --enable-debug && \
         ${make} -j7 && \
         ${make} check
     ) 2>&1 | tee /tmp/build.log
@@ -38,7 +40,7 @@ function vg() {
 
     echo "[*] Logging to ${logfile}"
 
-    LD_LIBRARY_PATH=$clam/libclamav/.libs valgrind \
+    LD_LIBRARY_PATH=$clam/libclamav/.libs /usr/bin/time -h valgrind \
         --verbose \
         --track-fds=yes \
         --log-file=${logfile} \
