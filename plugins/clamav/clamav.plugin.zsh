@@ -42,7 +42,17 @@ function buildclam() {
         if [ -f config.status ]; then
             ${make} clean distclean
         fi
-        CC=${clamcc} LDFLAGS=${ldflags} CFLAGS=${cflags} ./configure --disable-silent-rules --with-dbdir=/data/clamav/db/${dbdir} --disable-clamav --enable-milter --enable-debug ${json} && \
+
+        CC=${clamcc} \
+        LDFLAGS=${ldflags} \
+        CFLAGS=${cflags} \
+        ./configure \
+            --disable-silent-rules \
+            --with-dbdir=/data/clamav/db/${dbdir} \
+            --disable-clamav \
+            --enable-milter \
+            --enable-debug \
+            ${json} && \
         ${make} -j7 && \
         ${make} check
     ) 2>&1 | tee /tmp/build.log
@@ -77,6 +87,7 @@ function debugclam() {
     else
         app=${clam}/${app}/.libs/${app}
     fi
+
     LD_LIBRARY_PATH=${clam}/libclamav/.libs \
         gdb ${app} \
         $*
