@@ -92,3 +92,22 @@ function debugclam() {
         gdb ${app} \
         $*
 }
+
+function showjson() {
+    file=${1}
+
+    if [ ! -f /data/clamav/scripts/quick_json.pl ]; then
+        echo "The json script doesn't exist. Copy it to /data/clamav/scripts/quick_json.pl or die a slow death."
+        return 1
+    fi
+
+    if [ ! -f ${file} ]; then
+        echo "Yeah, so that file doesn't exist. What're you doing, idiot?"
+        return 1
+    fi
+
+    (
+        echo -n "LibClamAV Error: "
+        cat ${file}
+    ) | /data/clamav/scripts/quick_json.pl
+}
