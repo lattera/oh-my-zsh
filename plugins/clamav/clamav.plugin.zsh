@@ -18,8 +18,8 @@ alias clamconf='$(echo ${clam}/clamconf/clamconf)'
 
 function buildclam() {
     make="gmake"
-    cflags="-g -O0"
-    ldflags=""
+    cflags="${CFLAGS} -g -O0"
+    ldflags="${LDFLAGS}"
 
     case $(uname) in
         Linux)
@@ -42,7 +42,7 @@ function buildclam() {
         if [ -f config.status ]; then
             ${make} clean distclean
         fi
-        CC=${clamcc} LDFLAGS=${ldflags} CFLAGS=${cflags} ./configure --disable-silent-rules --with-dbdir=/data/clamav/db/${dbdir} --disable-clamav --prefix=/data/clamav/install --enable-milter --enable-debug ${json} && \
+        CC=${clamcc} LDFLAGS=${ldflags} CFLAGS=${cflags} ./configure --disable-silent-rules --with-dbdir=/data/clamav/db/${dbdir} --disable-clamav --enable-milter --enable-debug ${json} && \
         ${make} -j7 && \
         ${make} check
     ) 2>&1 | tee /tmp/build.log
