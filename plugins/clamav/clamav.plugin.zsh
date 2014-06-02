@@ -62,3 +62,22 @@ function vg() {
         --track-origins=yes \
         $*
 }
+
+function debugclam() {
+    app=${1}
+    shift
+
+    if [ ! -f ${clam}/${app}/.libs/${app} ]; then
+        if [ ! -f ${clam}/${app}/${app} ]; then
+            echo "You need to compile ClamAV first, dimwit."
+            return 1
+        fi
+
+        app=${clam}/${app}/${app}
+    else
+        app=${clam}/${app}/.libs/${app}
+    fi
+    LD_LIBRARY_PATH=${clam}/libclamav/.libs \
+        gdb ${app} \
+        $*
+}
