@@ -1,6 +1,7 @@
 if [ "${clam}" = "" ]; then
     clam=${HOME}/clamav/clamav-devel
     clamcc="clang"
+    clamcxx="clang++"
     clambase="/data/clamav"
     conf_freshclam="freshclam.conf"
     conf_clamd="clamd.conf"
@@ -25,10 +26,6 @@ function buildclam() {
         Linux)
             make="make"
             ;;
-        FreeBSD)
-            cflags="${cflags} -fPIE"
-            ldflags="${ldflags} -pie"
-            ;;
     esac
 
     (
@@ -44,6 +41,7 @@ function buildclam() {
         fi
 
         CC=${clamcc} \
+        CXX=${clamcxx} \
         LDFLAGS=${ldflags} \
         CFLAGS=${cflags} \
         ./configure \
