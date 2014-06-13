@@ -57,6 +57,15 @@ function buildclam() {
 }
 
 function vg() {
+    app=${1}
+    shift
+
+    app=$(getclam ${app})
+    if [ ${#app} = 0 ]; then
+        echo "${app} not found."
+        return 1
+    fi
+
     logfile=$(mktemp)
 
     echo "[*] Logging to ${logfile}"
@@ -68,27 +77,38 @@ function vg() {
         --read-var-info=yes \
         --leak-check=full \
         --track-origins=yes \
-        $*
+        ${app} $*
+}
+
+function getclam() {
+    app=${1}
+
+    if [ ! -f ${clam}/${app}/.libs/${app} ]; then
+        if [ ! -f ${clam}/${app}/${app} ]; then
+            return 1
+        fi
+
+        echo ${clam}/${app}/${app}
+    else
+        echo ${clam}/${app}/.libs/${app}
+    fi
 }
 
 function debugclam() {
     app=${1}
     shift
 
-    if [ ! -f ${clam}/${app}/.libs/${app} ]; then
-        if [ ! -f ${clam}/${app}/${app} ]; then
-            echo "You need to compile ClamAV first, dimwit."
-            return 1
-        fi
-
-        app=${clam}/${app}/${app}
-    else
-        app=${clam}/${app}/.libs/${app}
+    app=$(getclam ${app})
+    if [ ${#app} = 0 ]; then
+        echo "${app} not found."
+        return 1
     fi
 
     LD_LIBRARY_PATH=${clam}/libclamav/.libs \
         gdb ${app} \
         $*
+
+    return ${?}
 }
 
 function showjson() {
