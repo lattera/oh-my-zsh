@@ -6,8 +6,11 @@ if [ "${clam}" = "" ]; then
     conf_freshclam="freshclam.conf"
     conf_clamd="clamd.conf"
     dbdir="0.98"
+
+    clamtemps="no"
 fi
 
+# These aliases are now deprecated by the clamrun function below
 alias sigtool='$(echo ${clam}/sigtool/sigtool)'
 alias clamscan='$(echo ${clam}/clamscan/clamscan)'
 alias clamd='$(echo ${clam}/clamd/clamd) --config-file=${clambase}/conf/${conf_clamd}'
@@ -16,6 +19,79 @@ alias clamdtop='$(echo ${clam}/clamdtop/clamdtop) --config-file=${clambase}/conf
 alias freshclam='$(echo ${clam}/freshclam/freshclam) --config-file=${clambase}/conf/${conf_freshclam}'
 alias dbtool='$(echo ${clam}/dbtool/dbtool)'
 alias clamconf='$(echo ${clam}/clamconf/clamconf)'
+
+function getclam() {
+    app=${1}
+
+    if [ ! -f ${clam}/${app}/.libs/${app} ]; then
+        if [ ! -f ${clam}/${app}/${app} ]; then
+            return 1
+        fi
+
+        echo ${clam}/${app}/${app}
+    else
+        echo ${clam}/${app}/.libs/${app}
+    fi
+}
+
+function clamtemp() {
+    date=$(date '+%F_%T')
+
+    if [ ! -d /tmp/clamtemp ]; then
+        mkdir /tmp/clamtemp || return 1
+    fi
+
+    dir=$(mktemp -d /tmp/clamtemp/${date}.XXXX)
+    echo ${dir}
+}
+
+function clamrun() {
+    origapp=${1}
+    shift
+
+    app=$(getclam ${origapp})
+    if [ ${#app} -eq 0 ]; then
+        echo "[-] Command not found."
+        return 1
+    fi
+
+    tempdir=$(clamtemp)
+
+    if [ ${#tempdir} -eq 0 ]; then
+        echo "[-] Could not create temporary directory"
+        return 1
+    fi
+
+    leavetemps=""
+    if [ ${clamtemps} = "yes" ]; then
+        if [ ${origapp} = "clamscan" ]; then
+            leavetemps="--leave-temps"
+        fi
+    fi
+
+    LD_LIBRARY_PATH=${clam}/libclamav/.libs ${app} --tempdir=${tempdir} ${leavetemps} $*
+
+    if [ ${clamtemps} = "yes" ]; then
+        echo "[+] Leaving temporary files in ${tempdir}"
+    fi
+
+    return ${?}
+}
+
+function prunejson() {
+    tempdir=${1}
+
+    if [ ${#tempdir} -eq 0 ]; then
+        echo "[-] Please specify the directory"
+        return 1
+    fi
+
+    find ${tempdir} -type d -name \*.tmp | xargs rm -rf
+
+    for file in $(find ${tempdir} -type f); do
+        grep -q JSON ${file} || rm -f ${file}
+    done
+}
 
 function buildclam() {
     make="gmake"
@@ -78,20 +154,6 @@ function vg() {
         --leak-check=full \
         --track-origins=yes \
         ${app} $*
-}
-
-function getclam() {
-    app=${1}
-
-    if [ ! -f ${clam}/${app}/.libs/${app} ]; then
-        if [ ! -f ${clam}/${app}/${app} ]; then
-            return 1
-        fi
-
-        echo ${clam}/${app}/${app}
-    else
-        echo ${clam}/${app}/.libs/${app}
-    fi
 }
 
 function debugclam() {
