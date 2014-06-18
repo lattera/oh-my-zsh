@@ -176,9 +176,8 @@ function debugclam() {
 function showjson() {
     file=${1}
 
-    if [ ! -f /data/clamav/scripts/quick_json.pl ]; then
-        echo "The json script doesn't exist. Copy it to /data/clamav/scripts/quick_json.pl or die a slow death."
-        return 1
+    if [ ! -x /data/clamav/scripts/quick_json.pl ]; then
+        chmod u+x ${ZSH}/plugins/clamav/quick_json.pl
     fi
 
     if [ ! -f ${file} ]; then
@@ -189,5 +188,5 @@ function showjson() {
     (
         echo -n "LibClamAV Error: "
         cat ${file}
-    ) | /data/clamav/scripts/quick_json.pl
+    ) | ${ZSH}/plugins/clamav/quick_json.pl
 }
