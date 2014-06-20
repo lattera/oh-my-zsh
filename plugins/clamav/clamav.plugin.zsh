@@ -73,6 +73,8 @@ function clamrun() {
 
     if [ ${clamtemps} = "yes" ]; then
         echo "[+] Leaving temporary files in ${tempdir}"
+    else
+        rm -rf ${tempdir}
     fi
 
     return ${?}
