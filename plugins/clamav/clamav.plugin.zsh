@@ -55,12 +55,21 @@ function clamrun() {
         return 1
     fi
 
-    tempdir=$(clamtemp)
-
-    if [ ${#tempdir} -eq 0 ]; then
-        echo "[-] Could not create temporary directory"
-        return 1
-    fi
+    tempdirarg=""
+    case "${origapp}" in
+        freshclam)
+            ;;
+        clamconf)
+            ;;
+        *)
+            tempdir=$(clamtemp)
+            if [ ${#tempdir} -eq 0 ]; then
+                echo "[-] Could not create temporary directory"
+                return 1
+            fi
+            tempdirarg="--tempdir=${tempdir}"
+            ;;
+    esac
 
     leavetemps=""
     if [ ${clamtemps} = "yes" ]; then
@@ -69,7 +78,7 @@ function clamrun() {
         fi
     fi
 
-    LD_LIBRARY_PATH=${clam}/libclamav/.libs ${app} --tempdir=${tempdir} ${leavetemps} $*
+    LD_LIBRARY_PATH=${clam}/libclamav/.libs ${app} ${tempdirarg} ${leavetemps} $*
 
     if [ ${clamtemps} = "yes" ]; then
         echo "[+] Leaving temporary files in ${tempdir}"
@@ -191,4 +200,10 @@ function showjson() {
         echo -n "LibClamAV Error: "
         cat ${file}
     ) | ${ZSH}/plugins/clamav/quick_json.pl
+}
+
+function cleanclamdir() {
+    foreach file in $(git status --porcelain -uall | grep -F '??' | awk '{print $2;}'); do
+        rm -rf ${file}
+    done
 }
