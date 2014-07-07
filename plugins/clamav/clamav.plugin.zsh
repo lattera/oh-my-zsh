@@ -119,8 +119,16 @@ function buildclam() {
         cd $clam
 
         json=""
-        if [ $(git branch | grep \* | awk '{print $2;}') = "master" ]; then
-            json="--with-libjson"
+        if [ -d .git ]; then
+            if [ $(git branch | grep \* | awk '{print $2;}') = "master" ]; then
+                json="--with-libjson"
+            fi
+        else
+            case $(basename ${clam}) in
+                clamav-0.98.5*)
+                    json="--with-libjson"
+                    ;;
+            esac
         fi
 
         if [ -f config.status ]; then
