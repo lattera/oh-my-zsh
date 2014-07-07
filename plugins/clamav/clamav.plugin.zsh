@@ -16,7 +16,6 @@ alias clamscan='$(echo ${clam}/clamscan/clamscan)'
 alias clamd='$(echo ${clam}/clamd/clamd) --config-file=${clambase}/conf/${conf_clamd}'
 alias clamdscan='$(echo ${clam}/clamdscan/clamdscan) --config-file=${clambase}/conf/${conf_clamd}'
 alias clamdtop='$(echo ${clam}/clamdtop/clamdtop) --config-file=${clambase}/conf/${conf_clamd}'
-alias freshclam='$(echo ${clam}/freshclam/freshclam) --config-file=${clambase}/conf/${conf_freshclam}'
 alias dbtool='$(echo ${clam}/dbtool/dbtool)'
 alias clamconf='$(echo ${clam}/clamconf/clamconf)'
 
@@ -116,6 +115,7 @@ function buildclam() {
     esac
 
     (
+        set -e
         cd $clam
 
         json=""
@@ -136,9 +136,10 @@ function buildclam() {
             --with-dbdir=/data/clamav/db/${dbdir} \
             --disable-clamav \
             --enable-milter \
+            --prefix=${clam}/../install \
             --enable-debug \
-            ${json} && \
-        ${make} -j7 && \
+            ${json}
+        ${make} -j7
         ${make} check
     ) 2>&1 | tee /tmp/build.log
 }
@@ -206,4 +207,14 @@ function cleanclamdir() {
     foreach file in $(git status --porcelain -uall | grep -F '??' | awk '{print $2;}'); do
         rm -rf ${file}
     done
+}
+
+function freshclam() {
+    config=${1}
+
+    if [ ${#config} -eq 0 ]; then
+        config="${clambase}/conf/${conf_freshclam}"
+    fi
+
+    clamrun freshclam --config-file=${config}
 }
