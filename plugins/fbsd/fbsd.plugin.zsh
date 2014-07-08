@@ -1,67 +1,39 @@
 if [ "${makejobs}" = "" ]; then
     makejobs=7
+    kernel="LATT-ASLR"
 fi
 
-# BE management
-alias beupdate='/src/helpers/beupdate.sh -b $(date +%F_%T) -s'
+function buildfreebsd() {
+    (
+        set -e
 
-# Package management
-alias pkgv="pkg version '-vIl<'"
-alias pkgup="sudo portmaster -awD --no-confirm"
+        echo "==== $(date '+%F %T') building world and kernel ===="
 
-# Kernel/world building
-alias fbsdbuild="(cd /usr/src && make -sj${makejobs} buildworld buildkernel KERNCONF=SEC)"
+        cd /usr/src
+        make -sj${makejobs} buildworld buildkernel KERNCONF=${kernel}
+    ) 2>&1 | tee /tmp/build.log
 
-# Snapshot a ZFS dataset.
-function zsnap() {
-    mydate=$(date '+%F_%T')
-
-    for dataset in ${@}; do
-        sudo zfs snapshot ${dataset}@${mydate}
-        if [ ! ${?} -eq 0 ]; then
-            echo "[-] Could not snapshot ${dataset}@${mydate}. Return value: ${?}"
-            return 1
-        fi
-    done
-
-    return 0
+    return ${?}
 }
 
-# Install a new kernel/world. Optional argument points DESTDIR to a new location. Enforce using the SEC kernel.
-function fbsdinstall() {
-    DESTDIR=/
-    if [ ${#1} -gt 0 ]; then
-        DESTDIR=${1}
-    fi
-
-    zsnap $(zfs get -H -o value name ${DESTDIR})
-    if [ ! ${?} -eq 0 ]; then
+function buildrelease() {
+    version=${1}
+    if [ ${#version} -eq 0 ]; then
+        echo "[-] Please specify the version"
         return 1
     fi
 
     (
-        cd /usr/src
-        if [ ! ${?} -eq 0 ]; then
-            echo "[-] Could not change directory to the src tree"
-            return 1
-        fi
+        set -e
 
-        sudo make -s installkernel KERNCONF=SEC DESTDIR=${DESTDIR}
-        if [ ! ${?} -eq 0 ]; then
-            echo "[-] Could not install the kernel to ${DESTDIR}"
-            return 1
-        fi
+        buildfreebsd
+        cd /usr/src/release
+        sudo make clean || true # I don't care if this fails
+        echo "==== $(date '+%F %T') building release ===="
+        sudo make -s release KERNCONF=${kernel}
+        echo "==== $(date '+%F %T') copying release ===="
+        sudo cp /usr/obj/usr/src/release/*.{iso,txz} /src/release/pub/FreeBSD/snapshots/amd64/amd64/${version}
+    ) 2>&1 | tee /tmp/build.log
 
-        sudo make -s installworld DESTDIR=${DESTDIR}
-        if [ ! ${?} -eq 0 ]; then
-            echo "[-] Could not install world to ${DESTDIR}"
-            return 1
-        fi
-    )
-
-    return 0
-}
-
-function _fbsd() {
-
+    return ${?}
 }
