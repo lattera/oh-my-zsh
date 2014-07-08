@@ -6,6 +6,7 @@ if [ "${clam}" = "" ]; then
     conf_freshclam="freshclam.conf"
     conf_clamd="clamd.conf"
     dbdir="0.98"
+    clamjson="yes"
 
     clamtemps="no"
 fi
@@ -105,7 +106,7 @@ function prunejson() {
 
 function buildclam() {
     make="gmake"
-    cflags="${CFLAGS} -g -O0"
+    cflags="${CFLAGS} -g -O0 -Wall -fstack-protector -W -Wmissing-prototypes -Wmissing-declarations"
     ldflags="${LDFLAGS}"
 
     case $(uname) in
@@ -119,16 +120,18 @@ function buildclam() {
         cd $clam
 
         json=""
-        if [ -d .git ]; then
-            if [ $(git branch | grep \* | awk '{print $2;}') = "master" ]; then
-                json="--with-libjson"
-            fi
-        else
-            case $(basename ${clam}) in
-                clamav-0.98.5*)
+        if [ ${clamjson} = "yes" ]; then
+            if [ -d .git ]; then
+                if [ $(git branch | grep \* | awk '{print $2;}') = "master" ]; then
                     json="--with-libjson"
-                    ;;
-            esac
+                fi
+            else
+                case $(basename ${clam}) in
+                    clamav-0.98.5*)
+                        json="--with-libjson"
+                        ;;
+                esac
+            fi
         fi
 
         if [ -f config.status ]; then
