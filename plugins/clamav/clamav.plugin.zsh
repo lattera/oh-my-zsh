@@ -7,6 +7,8 @@ if [ "${clam}" = "" ]; then
     conf_clamd="clamd.conf"
     dbdir="0.98"
     clamjson="yes"
+    clamllvm="yes"
+    clamyara="yes"
 
     clamtemps="no"
 fi
@@ -14,8 +16,6 @@ fi
 # These aliases are now deprecated by the clamrun function below
 alias sigtool='$(echo ${clam}/sigtool/sigtool)'
 alias clamscan='$(echo ${clam}/clamscan/clamscan)'
-alias clamd='$(echo ${clam}/clamd/clamd) --config-file=${clambase}/conf/${conf_clamd}'
-alias clamdscan='$(echo ${clam}/clamdscan/clamdscan) --config-file=${clambase}/conf/${conf_clamd}'
 alias clamdtop='$(echo ${clam}/clamdtop/clamdtop) --config-file=${clambase}/conf/${conf_clamd}'
 alias dbtool='$(echo ${clam}/dbtool/dbtool)'
 alias clamconf='$(echo ${clam}/clamconf/clamconf)'
@@ -57,6 +57,10 @@ function clamrun() {
 
     tempdirarg=""
     case "${origapp}" in
+        clamdscan)
+            ;;
+        clamd)
+            ;;
         freshclam)
             ;;
         clamconf)
@@ -134,6 +138,13 @@ function buildclam() {
             fi
         fi
 
+        llvm=""
+        if [ ${clamllvm} = "no" ]; then
+            llvm="--disable-llvm"
+        fi
+
+        yara="--enable-yara=${clamyara}"
+
         if [ -f config.status ]; then
             ${make} clean distclean
         fi
@@ -149,7 +160,9 @@ function buildclam() {
             --enable-milter \
             --prefix=${clam}/../install \
             --enable-debug \
-            ${json}
+            ${json} \
+            ${yara} \
+            ${llvm}
         ${make} -j7
         ${make} check
     ) 2>&1 | tee /tmp/build.log
@@ -228,4 +241,21 @@ function freshclam() {
     fi
 
     clamrun freshclam --config-file=${config}
+}
+
+function clamd() {
+    config=${1}
+
+    if [ ${#config} -eq 0 ]; then
+        config="${clambase}/conf/${conf_clamd}"
+    else
+        shift
+    fi
+
+    clamrun clamd --config-file=${config} $*
+}
+
+function clamdscan() {
+    config="${clambase}/conf/${conf_clamd}"
+    clamrun clamdscan --config-file=${config} $*
 }
