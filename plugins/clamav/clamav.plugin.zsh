@@ -259,3 +259,36 @@ function clamdscan() {
     config="${clambase}/conf/${conf_clamd}"
     clamrun clamdscan --config-file=${config} $*
 }
+
+function clamusage() {
+    if [ $(uname) != "FreeBSD" ]; then
+        echo "FreeBSD only for now"
+        return 1
+    fi
+
+    if [ ${#1} -eq 0 ]; then
+        echo "Please specify the PID"
+        return 1
+    fi
+
+    pid=${1}
+
+    totalsize=0
+    tmpfile=$(mktemp)
+    procstat -v ${pid} | sed -e 1d -e '$d' > ${tmpfile}
+    if [ ! ${?} -eq 0 ]; then
+        rm ${tmpfile}
+        return 1
+    fi
+
+    while read line; do
+        begin=$(echo ${line} | awk '{print $2;}')
+        end=$(echo ${line} | awk '{print $3;}')
+        size=$((${end} - ${begin}))
+
+        totalsize=$((${totalsize} + ${size}))
+    done < ${tmpfile}
+    rm ${tmpfile}
+
+    echo "$(date '+%F_%T') ${i}: ${totalsize} / $((${totalsize}/1024))KB / $((${totalsize}/1024/1024))MB"
+}
