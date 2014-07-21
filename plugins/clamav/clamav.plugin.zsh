@@ -260,35 +260,57 @@ function clamdscan() {
     clamrun clamdscan --config-file=${config} $*
 }
 
-function clamusage() {
-    if [ $(uname) != "FreeBSD" ]; then
-        echo "FreeBSD only for now"
-        return 1
-    fi
+function perftest() {
+    # Run performance tests against clamscan
+    #
+    # This will pass any special options you have to clamscan,
+    # but will specify the samples used in our unit tests for
+    # scanning. The performance test is run with caching
+    # disabled.
+    #
+    # By default, 20 scans will be run. You can override that
+    # by setting the environment variable PERFRUNS to a
+    # different value.
 
-    if [ ${#1} -eq 0 ]; then
-        echo "Please specify the PID"
-        return 1
-    fi
-
-    pid=${1}
-
-    totalsize=0
     tmpfile=$(mktemp)
-    procstat -v ${pid} | sed -e 1d -e '$d' > ${tmpfile}
-    if [ ! ${?} -eq 0 ]; then
-        rm ${tmpfile}
-        return 1
+
+    nruns=${PERFRUNS}
+    if [ ${#nruns} -eq 0 ]; then
+        nruns=20
     fi
 
-    while read line; do
-        begin=$(echo ${line} | awk '{print $2;}')
-        end=$(echo ${line} | awk '{print $3;}')
-        size=$((${end} - ${begin}))
+    totaltime=0.0
+    mintime=0.0
+    maxtime=0.0
 
-        totalsize=$((${totalsize} + ${size}))
-    done < ${tmpfile}
+    j=0
+    for ((i=0; i < ${nruns}; i++)); do
+        echo "[*] $(date '+%F %T'): Executing run $((${i} + 1)) out of ${nruns}" >&2
+
+        clamrun clamscan --disable-cache --dev-performance ${*} ${clam}/clam* 2>&1 | grep "LibClamAV info: performance:" > ${tmpfile}
+
+        while read line; do
+            j=$((${j} + 1))
+            perf=$(echo ${line} | awk '{print $6;}' | sed -e 's/ms,//')
+
+            if (( ${mintime} == 0 )) || (( ${perf} < ${mintime} )); then
+                mintime=${perf}
+            fi
+
+            if (( ${perf} > ${maxtime} )); then
+                maxtime=${perf}
+            fi
+
+            totaltime=$((${totaltime} + ${perf}))
+        done < ${tmpfile}
+    done
     rm ${tmpfile}
 
-    echo "$(date '+%F_%T') ${i}: ${totalsize} / $((${totalsize}/1024))KB / $((${totalsize}/1024/1024))MB"
+    averagetime=$((${totaltime} / ${j}))
+
+    echo "Note: Times are in miliseconds" >&2
+    printf "Tot: %.03f\n" ${totaltime}
+    printf "Avg: %.03f\n" ${averagetime}
+    printf "Min: %.03f\n" ${mintime}
+    printf "Max: %.03f\n" ${maxtime}
 }
