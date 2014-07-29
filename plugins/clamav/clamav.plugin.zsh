@@ -15,6 +15,8 @@ if [ "${clam}" = "" ]; then
     clamtemps="no"
 fi
 
+lasttmpdir=""
+
 # These aliases are now deprecated by the clamrun function below
 alias sigtool='$(echo ${clam}/sigtool/sigtool)'
 alias clamscan='$(echo ${clam}/clamscan/clamscan)'
@@ -88,6 +90,7 @@ function clamrun() {
 
     if [ ${clamtemps} = "yes" ]; then
         echo "[+] Leaving temporary files in ${tempdir}"
+        lasttmpdir=${tempdir}
     else
         rm -rf ${tempdir}
     fi
@@ -327,4 +330,30 @@ function perftest() {
     printf "Avg: %.03f\n" ${averagetime}
     printf "Min: %.03f\n" ${mintime}
     printf "Max: %.03f\n" ${maxtime}
+}
+
+function vt_innerfiles() {
+    pluginfound=0
+    foreach plugin in ${plugins}; do
+        if [ ${plugin} = "virustotal" ]; then
+            pluginfound=1
+        fi
+    done
+
+    if [ ${pluginfound} -eq 0 ]; then
+        echo "[-] The virustotal oh-my-zsh plugin hasn't been loaded. Please load it."
+        return 1
+    fi
+
+    if [ ${#vtapikey} -eq 0 ]; then
+        echo "[-] Please set vtapikey"
+        return 1
+    fi
+
+    clamtemps="yes" clamrun clamscan ${*}
+
+    isMalware ${lasttmpdir}
+    res=${?}
+
+    return ${res}
 }
