@@ -119,11 +119,11 @@ function isMalware_ByDirectory() {
         if [ ${?} -eq 0 ]; then
             echo "FOUND: ${line}"
             rm ${tmpfile}
-            return 1
+            return 0
         fi
     done < ${tmpfile}
 
-    return 0
+    return 1
 }
 
 function isHash() {
