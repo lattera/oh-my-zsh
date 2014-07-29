@@ -102,7 +102,7 @@ function isMalware_ByDirectory() {
 
     if [ ${#dir} -eq 0 ]; then
         echo "[-] Please specify the directory"
-        return 0
+        return 1
     fi
 
     tmpfile=$(mktemp)
@@ -111,7 +111,7 @@ function isMalware_ByDirectory() {
     if [ ! ${?} -eq 0 ]; then
         echo "[-] Could not run find"
         rm ${tmpfile}
-        return 0
+        return 1
     fi
 
     while read line; do
