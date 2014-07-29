@@ -9,6 +9,8 @@ if [ "${clam}" = "" ]; then
     clamjson="yes"
     clamllvm="yes"
     clamyara="yes"
+    clamcurl="yes"
+    clamprefix=""
 
     clamtemps="no"
 fi
@@ -143,6 +145,16 @@ function buildclam() {
             llvm="--disable-llvm"
         fi
 
+        curl=""
+        if [ ${clamcurl} = "no" ]; then
+            curl="--with-libcurl=/tmp/nonexistentdir"
+        fi
+
+        prefix=""
+        if [ ${#clamprefix} -gt 0 ]; then
+            prefix="--prefix=${clamprefix}"
+        fi
+
         yara="--enable-yara=${clamyara}"
 
         if [ -f config.status ]; then
@@ -162,6 +174,8 @@ function buildclam() {
             --enable-debug \
             ${json} \
             ${yara} \
+            ${curl} \
+            ${prefix} \
             ${llvm}
         ${make} -j7
         ${make} check
