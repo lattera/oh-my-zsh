@@ -32,6 +32,8 @@ function vtlookup() {
     return ${res}
 }
 
+# Non-zero return code means error or clean
+# Zero return code means malware
 function isMalware_ByHash() {
     fhash=${1}
 
@@ -69,6 +71,10 @@ function isMalware_ByHash() {
     fi
 
     rm ${outfile}
+    if [ ${#ret} -eq 0 ] || [ $((${ret})) -eq 0 ]; then
+        return 1
+    fi
+
     return 0
 }
 
@@ -77,18 +83,47 @@ function isMalware_ByFile() {
 
     if [ ${#file} -eq 0 ]; then
         echo "[-] Please specify the file"
-        return 1
+        return 0
     fi
 
     fhash=$(sha256 -q ${file})
     res=${?}
     if [ ${res} -gt 0 ]; then
         echo "[-] Could not get the file's hash"
-        return ${res}
+        return 0
     fi
 
     isMalware_ByHash ${fhash}
     return ${?}
+}
+
+function isMalware_ByDirectory() {
+    dir=${1}
+
+    if [ ${#dir} -eq 0 ]; then
+        echo "[-] Please specify the directory"
+        return 0
+    fi
+
+    tmpfile=$(mktemp)
+
+    find ${dir} -type f > ${tmpfile} 2> /dev/null
+    if [ ! ${?} -eq 0 ]; then
+        echo "[-] Could not run find"
+        rm ${tmpfile}
+        return 0
+    fi
+
+    while read line; do
+        isMalware_ByFile ${line}
+        if [ ${?} -eq 0 ]; then
+            echo "FOUND: ${line}"
+            rm ${tmpfile}
+            return 1
+        fi
+    done < ${tmpfile}
+
+    return 0
 }
 
 function isHash() {
@@ -124,6 +159,11 @@ function isMalware() {
     isHash ${arg}
     if [ ${?} -eq 0 ]; then
         isMalware_ByHash ${arg}
+        return ${?}
+    fi
+
+    if [ -d ${arg} ]; then
+        isMalware_ByDirectory ${arg}
         return ${?}
     fi
 
