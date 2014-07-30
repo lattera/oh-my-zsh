@@ -1,3 +1,35 @@
+# VirusTotal API functions for ZSH
+#
+# Copyright (c) 2014, Shawn Webb <lattera@gmail.com>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# These functions require curl and jshon to be installed.
+
 if [ ${#vtapikey} -eq 0 ]; then
     vtapikey=""
 
@@ -32,8 +64,8 @@ function vtlookup() {
     return ${res}
 }
 
-# Non-zero return code means error or clean
-# Zero return code means malware
+# Non-zero return code means error or clean.
+# Zero return code means convicted by one or more vendors.
 function isMalware_ByHash() {
     fhash=${1}
 
@@ -78,25 +110,29 @@ function isMalware_ByHash() {
     return 0
 }
 
+# This function is just a wrapper for isMalware_byHash(). It returns 0
+# if it has been convicted by a vendor, else 1.
 function isMalware_ByFile() {
     file=${1}
 
     if [ ${#file} -eq 0 ]; then
         echo "[-] Please specify the file"
-        return 0
+        return 1
     fi
 
     fhash=$(sha256 -q ${file})
     res=${?}
     if [ ${res} -gt 0 ]; then
         echo "[-] Could not get the file's hash"
-        return 0
+        return 1
     fi
 
     isMalware_ByHash ${fhash}
     return ${?}
 }
 
+# This function returns 0 if at least one file in the directory has
+# been convicted by a vendor, else 1.
 function isMalware_ByDirectory() {
     dir=${1}
 
@@ -117,7 +153,7 @@ function isMalware_ByDirectory() {
     while read line; do
         isMalware_ByFile ${line}
         if [ ${?} -eq 0 ]; then
-            echo "FOUND: ${line}"
+            echo "VTFOUND: ${line}"
             rm ${tmpfile}
             return 0
         fi
@@ -126,6 +162,7 @@ function isMalware_ByDirectory() {
     return 1
 }
 
+# This returns 0 if it is a hash, else 1
 function isHash() {
     input=${1}
     inputsz=${#input}
