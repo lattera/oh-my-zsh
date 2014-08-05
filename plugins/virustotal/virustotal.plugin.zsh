@@ -27,8 +27,16 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# These functions require curl and jshon to be installed.
+#
+# This script is written with zsh (and oh-my-zsh) in mind. Since it
+# doesn't depend on anything specific to zsh and oh-my-zsh, it ought
+# to work in other shells. Additionally, the author of this script is
+# using FreeBSD, so there might be a few commands (namely, sha256)
+# that are specific to FreeBSD. Your mileage may vary.
+#
+# Requirements:
+# 1) ftp/curl
+# 2) textproc/jshon
 
 if [ ${#vtapikey} -eq 0 ]; then
     vtapikey=""
