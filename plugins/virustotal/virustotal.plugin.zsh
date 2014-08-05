@@ -33,10 +33,11 @@
 if [ ${#vtapikey} -eq 0 ]; then
     vtapikey=""
 
-    vtreporturl="https://www.virustotal.com/vtapi/v2/file/report"
+    vtreporturl_file="https://www.virustotal.com/vtapi/v2/file/report"
+    vtsubmiturl_file="https://www.virustotal.com/vtapi/v2/file/scan"
 fi
 
-function vtlookup() {
+function getFileReport() {
     fhash=${1}
     output=${2}
 
@@ -51,11 +52,10 @@ function vtlookup() {
     fi
 
     if [ ${#output} -eq 0 ]; then
-        echo "[-] Please specify the output file"
-        return 1
+        output="-"
     fi
 
-    curl -F "resource=${fhash}" -F "apikey=${vtapikey}" -o ${output} ${vtreporturl} 2> /dev/null
+    curl -F "resource=${fhash}" -F "apikey=${vtapikey}" -o ${output} ${vtreporturl_file} 2> /dev/null
     res=${?}
     if [ ! ${res} -eq 0 ]; then
         echo "[-] curl failed"
@@ -81,10 +81,10 @@ function isMalware_ByHash() {
         return 1
     fi
 
-    output=$(vtlookup ${fhash} ${outfile})
+    output=$(getFileReport ${fhash} ${outfile})
     res=${?}
     if [ ! ${res} -eq 0 ]; then
-        echo "[-] vtlookup failed"
+        echo "[-] getFileReport failed"
         rm ${outfile}
         return 1
     fi
@@ -205,5 +205,28 @@ function isMalware() {
     fi
 
     isMalware_ByFile ${arg}
+    return ${?}
+}
+
+function submitFile() {
+    file=${1}
+    output=${2}
+
+    if [ ${#vtapikey} -eq 0 ]; then
+        echo "[-] vtapikey required"
+        return 1
+    fi
+
+    if [ ${#file} -eq 0 ]; then
+        echo "[-] Please specify the file to submit"
+        return 1
+    fi
+
+    if [ ${#output} -eq 0 ]; then
+        output="/dev/null"
+    fi
+
+    curl -F "apikey=${vtapikey}" -F "file=@\"${file}\";filename=\"$(basename ${file})\"" -o ${output} ${vtsubmiturl_file} 2> /dev/null
+
     return ${?}
 }
