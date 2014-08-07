@@ -45,6 +45,33 @@ if [ ${#vtapikey} -eq 0 ]; then
     vtsubmiturl_file="https://www.virustotal.com/vtapi/v2/file/scan"
 fi
 
+function getHash() {
+    file=${1}
+    res=0
+
+    if [ ${#file} -eq 0 ]; then
+        echo "[-] Please specify the file to hash"
+        return 1
+    fi
+
+    case $(uname) in
+        FreeBSD)
+            sha256 -q ${file} 2> /dev/null
+            res=${?}
+            ;;
+        Linux)
+            (sha256sum ${file} | awk '{print $1;}') 2> /dev/null
+            res=${?}
+            ;;
+        *)
+            echo "[-] $(uname) not supported"
+            res=1
+            ;;
+    esac
+
+    return ${res}
+}
+
 function getFileReport() {
     fhash=${1}
     output=${2}
@@ -128,7 +155,7 @@ function isMalware_ByFile() {
         return 1
     fi
 
-    fhash=$(sha256 -q ${file})
+    fhash=$(getHash ${file})
     res=${?}
     if [ ${res} -gt 0 ]; then
         echo "[-] Could not get the file's hash"
