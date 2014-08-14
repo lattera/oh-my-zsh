@@ -37,3 +37,49 @@ function buildrelease() {
 
     return ${?}
 }
+
+function findpid() {
+    app=${1}
+    pattern=${2}
+
+    if [ ${#app} -eq 0 ]; then
+        return 0
+    fi
+
+    if [ ${#pattern} -eq 0 ]; then
+        return 0
+    fi
+
+    foreach i in $(pgrep ${app}); do
+        ps -o command ${i} | sed 1d | grep -q ${pattern}
+        if [ ${?} -eq 0 ]; then
+            echo ${i}
+            return ${i}
+        fi
+    done
+
+    return 0
+}
+
+function killimap() {
+    timeout=30
+
+    pid=$(findpid python offlineimap)
+    pid=$((${pid} + 0))
+
+    if [ ${pid} -gt 0 ]; then
+        kill -TERM ${pid}
+
+        for ((i=0; i < ${timeout}; i++)); do
+            newpid=$(findpid python offlineimap)
+            if [ $((${newpid} + 0)) -eq 0 ]; then
+                return 0
+            fi
+
+            sleep 1
+        done
+        kill -KILL ${pid}
+    fi
+
+    return 0
+}
