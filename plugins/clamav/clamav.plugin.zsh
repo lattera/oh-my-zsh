@@ -361,7 +361,7 @@ function vt_innerfiles() {
 function set_clam() {
     myclam=${1}
     if [ ${#myclam} -eq 0 ]; then
-        echo "USAGE: ${0} [clam|full_path]"
+        echo "USAGE: ${0} <clam|full_path> [subdir]"
         return 1
     fi
 
@@ -375,6 +375,6 @@ function set_clam() {
     fi
 
     clam="${myclam}"
-    cd ${clam}
+    cd ${clam}/${2}
     return ${?}
 }
