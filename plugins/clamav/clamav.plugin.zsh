@@ -1,5 +1,5 @@
 if [ "${clam}" = "" ]; then
-    clam=${HOME}/clamav/clamav-devel
+    clam="${HOME}/clamav/clamav-devel"
     clamcc="clang"
     clamcxx="clang++"
     clambase="/data/clamav"
@@ -356,4 +356,25 @@ function vt_innerfiles() {
     res=${?}
 
     return ${res}
+}
+
+function set_clam() {
+    myclam=${1}
+    if [ ${#myclam} -eq 0 ]; then
+        echo "USAGE: ${0} [clam|full_path]"
+        return 1
+    fi
+
+    if [ "${myclam[1]}" != "/" ]; then
+        myclam="${HOME}/clamav/${myclam}"
+    fi
+
+    if [ ! -d ${myclam} ]; then
+        echo "${myclam} does not exist."
+        return 1
+    fi
+
+    clam="${myclam}"
+    cd ${clam}
+    return ${?}
 }
