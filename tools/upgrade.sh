@@ -1,8 +1,7 @@
 
 # Use colors, but only if connected to a terminal, and that terminal
 # supports them.
-tput=$(which tput)
-if [ -n "$tput" ]; then
+if which tput >/dev/null 2>&1; then
     ncolors=$(tput colors)
 fi
 if [ -t 1 ] && [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
@@ -21,7 +20,7 @@ else
   NORMAL=""
 fi
 
-printf "${BLUE}%s${NORMAL}\n" "Upgrading Oh My Zsh"
+printf "${BLUE}%s${NORMAL}\n" "Updating Oh My Zsh"
 cd "$ZSH"
 if git pull --rebase --stat origin master
 then
@@ -34,7 +33,7 @@ then
   printf '%s\n' '                        /____/                       '
   printf "${BLUE}%s\n" "Hooray! Oh My Zsh has been updated and/or is at the current version."
   printf "${BLUE}${BOLD}%s${NORMAL}\n" "To keep up on the latest news and updates, follow us on twitter: https://twitter.com/ohmyzsh"
-  printf "${BLUE}${BOLD}%s${NORMAL}\n" "Get your Oh My Zsh swag at:  http://shop.planetargon.com/"
+  printf "${BLUE}${BOLD}%s${NORMAL}\n" "Get your Oh My Zsh swag at:  https://shop.planetargon.com/"
 else
   printf "${RED}%s${NORMAL}\n" 'There was an error updating. Try again later?'
 fi

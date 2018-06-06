@@ -36,14 +36,15 @@ CURRENT_BG='NONE'
   local LC_ALL="" LC_CTYPE="en_US.UTF-8"
   # NOTE: This segment separator character is correct.  In 2012, Powerline changed
   # the code points they use for their special characters. This is the new code point.
-  # If this is not working for you, you probably have an old version of the 
+  # If this is not working for you, you probably have an old version of the
   # Powerline-patched fonts installed. Download and install the new version.
   # Do not submit PRs to change this unless you have reviewed the Powerline code point
   # history and have new information.
   # This is defined using a Unicode escape sequence so it is unambiguously readable, regardless of
   # what font the user is viewing this source code in. Do not replace the
   # escape sequence with a single literal character.
-  SEGMENT_SEPARATOR=$'\ue0b0' # 
+  # Do not change this! Do not make it '\u2b80'; that is the old, wrong code point.
+  SEGMENT_SEPARATOR=$'\ue0b0'
 }
 
 # Begin a segment
@@ -85,16 +86,16 @@ prompt_context() {
 
 # Git: branch/detached head, dirty status
 prompt_git() {
-
+  (( $+commands[git] )) || return
   local PL_BRANCH_CHAR
   () {
     local LC_ALL="" LC_CTYPE="en_US.UTF-8"
     PL_BRANCH_CHAR=$'\ue0a0'         # 
   }
   local ref dirty mode repo_path
-  repo_path=$(git rev-parse --git-dir 2>/dev/null)
 
   if $(git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
+    repo_path=$(git rev-parse --git-dir 2>/dev/null)
     dirty=$(parse_git_dirty)
     ref=$(git symbolic-ref HEAD 2> /dev/null) || ref="➦ $(git rev-parse --short HEAD 2> /dev/null)"
     if [[ -n $dirty ]]; then
@@ -118,7 +119,7 @@ prompt_git() {
     zstyle ':vcs_info:*' get-revision true
     zstyle ':vcs_info:*' check-for-changes true
     zstyle ':vcs_info:*' stagedstr '✚'
-    zstyle ':vcs_info:git:*' unstagedstr '●'
+    zstyle ':vcs_info:*' unstagedstr '●'
     zstyle ':vcs_info:*' formats ' %u%c'
     zstyle ':vcs_info:*' actionformats ' %u%c'
     vcs_info
@@ -126,8 +127,31 @@ prompt_git() {
   fi
 }
 
+prompt_bzr() {
+    (( $+commands[bzr] )) || return
+    if (bzr status >/dev/null 2>&1); then
+        status_mod=`bzr status | head -n1 | grep "modified" | wc -m`
+        status_all=`bzr status | head -n1 | wc -m`
+        revision=`bzr log | head -n2 | tail -n1 | sed 's/^revno: //'`
+        if [[ $status_mod -gt 0 ]] ; then
+            prompt_segment yellow black
+            echo -n "bzr@"$revision "✚ "
+        else
+            if [[ $status_all -gt 0 ]] ; then
+                prompt_segment yellow black
+                echo -n "bzr@"$revision
+
+            else
+                prompt_segment green black
+                echo -n "bzr@"$revision
+            fi
+        fi
+    fi
+}
+
 prompt_hg() {
-  local rev status
+  (( $+commands[hg] )) || return
+  local rev st branch
   if $(hg id >/dev/null 2>&1); then
     if $(hg prompt >/dev/null 2>&1); then
       if [[ $(hg prompt "{status|unknown}") = "?" ]]; then
@@ -196,6 +220,7 @@ build_prompt() {
   prompt_context
   prompt_dir
   prompt_git
+  prompt_bzr
   prompt_hg
   prompt_end
 }
